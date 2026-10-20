@@ -28,3 +28,10 @@ docs/slides_build/
 
 results/load_test_run.log
 results/load_hang_check.log
+
+# 개인 사진은 저장소에 올리지 않는다
+*.jpg
+*.jpeg
+*.heic
+photo*
+사진*
