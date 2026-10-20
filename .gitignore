@@ -25,3 +25,6 @@ results/cpu_check.log
 PROJECT_BRIEF.md
 HANDOFF.md
 docs/slides_build/
+
+results/load_test_run.log
+results/load_hang_check.log
