@@ -1,0 +1,17 @@
+﻿# 직접 설치한 패키지의 검증된 버전 (Python 3.11, Windows). torch 는 CPU 버전을 따로 설치:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+pandas==3.0.6
+numpy==2.4.6
+scikit-learn==1.9.1
+statsmodels==0.15.0
+lightgbm==4.7.0
+matplotlib==3.11.2
+tabulate==0.10.0
+onnx==1.23.2
+onnxruntime==1.31.0
+onnxscript==0.7.2
+fastapi==0.143.1
+uvicorn==0.54.0
+httpx==0.28.1
+pytest==9.1.1
+# torch (설치된 버전): torch==2.14.1+cpu

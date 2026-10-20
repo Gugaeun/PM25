@@ -1,0 +1,27 @@
+# 환경, 캐시
+.venv/
+__pycache__/
+.pytest_cache/
+
+# 원본·대용량 데이터 (README의 "데이터" 절차대로 내려받아 다시 만든다)
+data/raw*/
+results/long/
+results/walkforward/
+*.npy
+seoul_hourly.csv
+
+# 실행 중 생기는 기록과 호출 횟수 (에어코리아 이용 조건을 확인하기 전에는 올리지 않는다)
+results/live_log.jsonl
+results/live_check.md
+results/live_collect.*
+results/airkorea_calls.json
+results/cpu_check.log
+
+# 키와 개인 파일
+.env
+*.key
+*.pptx
+*.zip
+PROJECT_BRIEF.md
+HANDOFF.md
+docs/slides_build/

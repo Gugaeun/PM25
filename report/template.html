@@ -1,0 +1,348 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>서울 PM2.5 예측 결과</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* layout: 좁은 단일 컬럼 리포트. 섹션마다 제목 → 한 줄 결론 → 차트/표 → 읽는 법 */
+:root{
+  --bg:#f6f8fa; --surface:#ffffff; --ink:#14212e; --muted:#5a6b7b; --line:#dbe2e9; --grid:#e8edf2;
+  --accent:#1d5fd0; --accent-soft:#e3edfc; --base:#8b99a8; --base2:#b4bfcb;
+  --good:#2f7de1; --normal:#2e9d62; --bad:#e08a1e; --vbad:#d1383d;
+  --pos:#1f8f55; --neg:#c93a3f;
+  --sans:'IBM Plex Sans KR',system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1720; --surface:#17212c; --ink:#e6edf4; --muted:#93a4b5; --line:#2a3846; --grid:#223040;
+  --accent:#6ea2f5; --accent-soft:#1c2c47; --base:#7d8c9c; --base2:#566575;
+  --good:#5b9cf0; --normal:#4cbb85; --bad:#eba24a; --vbad:#ee6b70; --pos:#4cbb85; --neg:#ee6b70; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1720; --surface:#17212c; --ink:#e6edf4; --muted:#93a4b5; --line:#2a3846; --grid:#223040;
+  --accent:#6ea2f5; --accent-soft:#1c2c47; --base:#7d8c9c; --base2:#566575;
+  --good:#5b9cf0; --normal:#4cbb85; --bad:#eba24a; --vbad:#ee6b70; --pos:#4cbb85; --neg:#ee6b70; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;
+  padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+h1{font-size:clamp(26px,5vw,36px);line-height:1.2;margin:0 0 10px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:20px;margin:0 0 6px;font-weight:600;text-wrap:balance}
+p{margin:0}
+.lead{color:var(--muted);max-width:62ch}
+.meta{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:14px;display:flex;flex-wrap:wrap;gap:6px 18px}
+.finding{font-size:16px;font-weight:500;max-width:64ch;margin-bottom:14px}
+.note{color:var(--muted);font-size:13px;max-width:70ch;margin-top:10px}
+section{min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.summary .card b{display:block;font-family:var(--mono);font-size:24px;font-weight:500;color:var(--accent);margin-bottom:4px}
+.summary .card span{font-size:13px;color:var(--muted);display:block}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--sans);fill:var(--muted);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:10px;font-size:13px}
+.legend i{display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.legend label{cursor:pointer;display:inline-flex;align-items:center;gap:4px;user-select:none}
+.tablewrap{overflow-x:auto;margin-top:14px}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:480px}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted);font-size:12px}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+tr.hl td{background:var(--accent-soft)}
+.controls{display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:12px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;background:var(--surface);color:var(--ink);border:0;padding:6px 12px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.seg button:focus-visible,.legend input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pos{color:var(--pos)}.neg{color:var(--neg)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.limits{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.limits ul{margin:6px 0 0;padding-left:18px;font-size:14px}
+.limits li{margin-bottom:4px}
+code,pre{font-family:var(--mono);font-size:12.5px}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;margin:10px 0 0}
+footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:16px}
+</style>
+
+<main>
+<header>
+  <h1>서울 PM2.5 시계열 예측 결과</h1>
+  <p class="lead">서울 25개 자치구 측정소 평균 PM2.5를 1~24시간 뒤까지 예측합니다. naive·persistence·ARIMA·LightGBM을 기준으로 두고 PyTorch LSTM·1D-CNN을 같은 조건에서 비교했습니다.</p>
+  <div class="meta"><span>데이터 2024-01 ~ 2025-12 (17,544시간)</span><span>학습 2024 / 검증 2025-01~06 / 테스트 2025-07~12</span><span>출처 서울 열린데이터광장 OA-23044 (확정 전 자료)</span></div>
+</header>
+
+<section id="summary">
+  <div class="summary" id="sumcards"></div>
+</section>
+
+<section id="models">
+  <h2>모델 비교</h2>
+  <p class="finding" id="models-find"></p>
+  <div class="card">
+    <div class="legend" id="models-legend"></div>
+    <div id="chart-horizon"></div>
+  </div>
+  <div class="tablewrap"><table id="tbl-models"></table></div>
+  <p class="note">설정을 검증 구간에서 고르는 튜닝을 해도(LightGBM·LSTM·1D-CNN) 테스트 MAE는 −1.4%~+0.9% 변하는 데 그쳐 순위가 같았습니다. naive(어제 같은 시각)는 예측 시점과 상관없이 24시간 전 값을 쓰기 때문에 모든 horizon에서 오차가 같습니다. 그래서 짧은 horizon에서는 persistence(직전 값)가 훨씬 강한 기준입니다. LSTM·CNN·LightGBM+기상 값은 시드 3개를 평균낸 앙상블 예측입니다.</p>
+</section>
+
+<section id="ablation">
+  <h2>기상 변수를 넣으면 얼마나 좋아지나</h2>
+  <p class="finding" id="ab-find"></p>
+  <div class="card">
+    <div class="controls"><div class="seg" id="ab-model"></div><span style="font-size:13px;color:var(--muted)">PM2.5만 쓴 모델 대비 MAE 감소율, 테스트 구간</span></div>
+    <div id="chart-ablation"></div>
+  </div>
+  <p class="note">LSTM은 시드 3개의 평균이고 막대 끝의 선은 표준편차입니다. 기온·습도나 풍속 하나만 넣은 효과(1~2%)는 시드 간 차이(±0.08 MAE)와 비슷해서 단정하기 어렵습니다. 풍속벡터(풍향을 u, v로 변환)와 기상 전체 묶음은 두 모델 모두에서 일관되게 개선됐습니다. 입력 윈도우를 24·48·96·168시간으로 바꿔도 LSTM 오차는 <span id="win-note"></span>로 거의 같았습니다.</p>
+</section>
+
+<section id="series">
+  <h2>실제값과 예측값</h2>
+  <p class="finding" id="series-find">짧은 horizon은 실제값을 잘 따라가고, 길어질수록 고농도 정점을 놓칩니다.</p>
+  <div class="card">
+    <div class="controls">
+      <div class="seg" id="s-h"></div><div class="seg" id="s-p"></div>
+    </div>
+    <div class="legend"><span><i style="background:var(--ink)"></i>실제</span><span><i style="background:var(--accent)"></i>LSTM+기상</span><span><i style="background:var(--base)"></i>persistence</span></div>
+    <div id="chart-series"></div>
+  </div>
+  <p class="note" id="series-note"></p>
+</section>
+
+<section id="failure">
+  <h2>고농도에서 실패하는 방식</h2>
+  <p class="finding" id="fail-find"></p>
+  <div class="card">
+    <div class="controls"><div class="seg" id="f-h"></div><span style="font-size:13px;color:var(--muted)">편향 = 평균(예측 − 실제). 음수면 과소예측</span></div>
+    <div class="tablewrap" style="margin-top:0"><table id="tbl-fail"></table></div>
+  </div>
+  <p class="note">테스트 구간에서 75µg/m³를 넘은 시간은 21시간뿐이라 "매우 나쁨" 행은 참고용입니다. 24시간 뒤 일평균 오차가 컸던 날은 11/24~25, 12/7, 12/17, 12/29로 모두 늦가을·겨울입니다.</p>
+</section>
+
+<section id="events">
+  <h2>고농도 탐지와 개선 시도</h2>
+  <p class="finding" id="ev-find"></p>
+  <div class="tablewrap"><table id="tbl-ev"></table></div>
+  <p class="note" id="ev-note"></p>
+  <div class="tablewrap" style="margin-top:18px"><table id="tbl-loss"></table></div>
+  <p class="note">고농도 가중은 정답이 35를 넘는 샘플의 손실을 3배로, 분위수 0.7은 낮게 예측하는 것을 더 크게 벌점합니다. 시드 3개 앙상블, 테스트 2025-07~12. 가중치 3은 하나만 시도했고 튜닝하지 않았습니다. 서빙 모델에는 적용하지 않았습니다.</p>
+</section>
+
+<section id="long">
+  <h2>새 기간과 더 긴 학습으로 확인</h2>
+  <p class="finding">결론은 학습 때 쓰지 않은 2026년 1~9월에서도 유지됩니다. 학습 기간은 5년까지 늘리면 좋아지다 멈추고, 고농도 놓침은 데이터를 늘려도 그대로입니다.</p>
+  <div class="tablewrap"><table id="tbl-long"></table></div>
+  <p class="note" id="long-note"></p>
+  <h3 style="margin:22px 0 8px;font-size:15px">학습 기간별 (학습 곡선, 평가 2026-01~09)</h3>
+  <div class="tablewrap"><table id="tbl-curve"></table></div>
+  <p class="note" id="curve-note"></p>
+</section>
+
+<section id="wf">
+  <h2>분기별로 나눠 다시 확인한 결과 (walk-forward)</h2>
+  <p class="finding" id="wf-find"></p>
+  <div class="card">
+    <div class="legend" id="wf-legend"></div>
+    <div id="chart-wf"></div>
+  </div>
+  <div class="tablewrap"><table id="tbl-wf"></table></div>
+  <p class="note">2025년 각 분기를 테스트로 두고 그 이전 전체로 학습했습니다(첫 분기는 학습 데이터가 2024년 1년뿐). 하이퍼파라미터는 분기마다 다시 맞추지 않았습니다. fold가 4개이고 분기 안의 사건 몇 개가 평균을 좌우하므로 개선율은 대략적인 범위로 읽어야 합니다.</p>
+</section>
+
+<section id="deploy">
+  <h2>ONNX 변환과 API 서빙</h2>
+  <p class="finding" id="onnx-find"></p>
+  <div class="tablewrap" style="margin-top:0"><table id="tbl-onnx"></table></div>
+  <p class="note">추론 시간은 CPU 1스레드, 요청 1건(배치 1) 기준 p50입니다. 모델은 시드 0 하나이고 모델 비교표의 수치와 다릅니다. 반복·동시 요청 부하 테스트는 아직 하지 않았습니다.</p>
+  <div class="card" style="margin-top:14px">
+    <p style="font-size:14px;font-weight:600">FastAPI <code>POST /predict</code></p>
+    <pre>{ "end_time": "2025-12-31T23:00:00",
+  "history": { "PM25": [ ...48개 ], "temp": [...], "humid": [...],
+               "ws": [...], "wind_u": [...], "wind_v": [...] } }
+→ { "horizons_h": [1..24], "pm25_pred": [...24개], "mean_next_24h": 18.23 }</pre>
+    <p class="note" style="margin-top:8px">테스트 구간 실제 데이터 15건으로 호출해 평균 MAE 4.03, 응답 p50 약 3ms / p95 약 4ms를 확인했습니다(순차 호출, 네트워크 제외). 변수 누락·길이 오류는 422로 응답합니다.</p>
+  </div>
+</section>
+
+<section id="limits">
+  <h2>한계와 아직 하지 않은 것</h2>
+  <div class="limits">
+    <div class="card"><b>데이터</b><ul>
+      <li>서울시 안내에 따른 확정 전 자료입니다. 최종 확정 자료는 에어코리아에 있습니다.</li>
+      <li>풍향·풍속·기온·습도(항목 11~14)는 공식 코드표에 없어서 값의 계절 패턴으로 확인했습니다.</li>
+      <li>서울 평균에는 25개 자치구 측정소만 쓰고, 성격을 알 수 없는 측정소 15개는 뺐습니다.</li></ul></div>
+    <div class="card"><b>평가</b><ul>
+      <li>단일 분할 테스트는 여름·가을 위주라 고농도 표본이 적습니다.</li>
+      <li>walk-forward는 fold 4개이고 분기별 재튜닝은 하지 않았습니다.</li>
+      <li>개별 기상 변수의 ablation은 walk-forward에서 다시 하지 않았습니다.</li></ul></div>
+    <div class="card"><b>미완료</b><ul>
+      <li>API 반복·동시 요청 부하 테스트</li>
+      <li>NumPy RNN/GRU 직접 구현과 gradient check</li>
+      <li>에어코리아 실시간 데이터 데모</li></ul></div>
+  </div>
+</section>
+
+<footer>데이터: 서울 열린데이터광장 "서울시 대기오염물질 측정정보"(공공누리 1유형). 코드와 결과는 프로젝트 폴더의 <code>src/</code>, <code>results/</code>, <code>api/</code>에 있습니다.</footer>
+</main>
+
+<script>
+const D = /*DATA*/null;
+const NS = 'http://www.w3.org/2000/svg';
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = id => document.getElementById(id);
+const f1 = v => v.toFixed(1), f2 = v => v.toFixed(2);
+const NAME = {naive:'naive (어제 같은 시각)',persistence:'persistence (직전 값)',lgbm:'LightGBM',lstm:'LSTM',cnn:'1D-CNN',lgbm_w:'LightGBM + 기상',lstm_w:'LSTM + 기상',cnn_w:'1D-CNN + 기상'};
+const COL = {naive:'--base2',persistence:'--base',lgbm:'#c58a2b',lstm:'#2a8f8f',cnn:'#8d5fc9',lgbm_w:'#c58a2b',lstm_w:'--accent',cnn_w:'#d0527a'};
+const colr = k => COL[k].startsWith('--') ? css(COL[k]) : COL[k];
+const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; parent && parent.appendChild(e); return e; };
+const cw = id => Math.max(320, Math.min(760, $(id).clientWidth || 760));
+function svgRoot(host, w, h) { host.innerHTML = ''; return el('svg', {viewBox:`0 0 ${w} ${h}`, role:'img'}, host); }
+function nice(max) { const p = Math.pow(10, Math.floor(Math.log10(max))); const m = max / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+function seg(host, items, cur, on) {
+  host.innerHTML = '';
+  items.forEach(([v, label]) => { const b = document.createElement('button'); b.textContent = label; b.setAttribute('aria-pressed', v === cur); b.onclick = () => { [...host.children].forEach(c => c.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); on(v); }; host.appendChild(b); });
+}
+
+/* ---------- 요약 ---------- */
+const best = D.overall.lstm_w < D.overall.cnn_w ? 'lstm_w' : 'cnn_w';
+const red = (a, b) => 100 * (1 - a / b);
+$('sumcards').innerHTML = [
+  [f1(red(D.overall.cnn_w, D.overall.persistence)) + '%', `1D-CNN+기상이 persistence보다 낮춘 평균 MAE (테스트, 1~24시간 평균 ${f2(D.overall.cnn_w)} vs ${f2(D.overall.persistence)})`],
+  [f1(Object.values(D.wf.red.lstm_w).reduce((a, b) => a + b) / 4) + '%', `LSTM+기상의 분기별(4개) 평균 감소율. 범위 ${Math.min(...Object.values(D.wf.red.lstm_w))}% ~ ${Math.max(...Object.values(D.wf.red.lstm_w))}%`],
+  [f1(Object.values(D.wf.red.lgbm).reduce((a, b) => a + b) / 4) + '%', `LightGBM(PM2.5만)의 분기 평균. 분기에 따라 persistence보다 나쁩니다 (${Math.min(...Object.values(D.wf.red.lgbm))}% ~ ${Math.max(...Object.values(D.wf.red.lgbm))}%)`],
+].map(([b, s]) => `<div class="card"><b>${b}</b><span>${s}</span></div>`).join('');
+
+/* ---------- 모델 비교: horizon 선 그래프 ---------- */
+const MODELS = ['naive','persistence','lgbm','lstm','cnn','lstm_w','cnn_w'];
+const shown = new Set(['naive','persistence','lgbm','lstm_w','cnn_w']);
+$('models-find').textContent = `1시간 뒤는 모든 모델이 비슷하고(MAE 약 1.2), 24시간 뒤로 갈수록 기상 변수를 넣은 LSTM·CNN이 가장 낮습니다 (${f2(D.horizon_mae.lstm_w[23])} / ${f2(D.horizon_mae.cnn_w[23])} vs persistence ${f2(D.horizon_mae.persistence[23])}).`;
+function drawHorizon() {
+  const W = cw('chart-horizon'), H = Math.round(W * .46) + 40, m = {l:44, r:14, t:28, b:40}, host = $('chart-horizon'), s = svgRoot(host, W, H);
+  const keys = MODELS.filter(k => shown.has(k)); const ymax = nice(Math.max(...keys.flatMap(k => D.horizon_mae[k])) * 1.02);
+  const X = h => m.l + (h - 1) / 23 * (W - m.l - m.r), Y = v => H - m.b - v / ymax * (H - m.t - m.b);
+  for (let v = 0; v <= ymax + 1e-9; v += ymax / 4) { el('line', {x1:m.l, x2:W-m.r, y1:Y(v), y2:Y(v), stroke:css('--grid')}, s); el('text', {x:m.l-8, y:Y(v)+4, 'text-anchor':'end'}, s, f1(v)); }
+  [1,6,12,18,24].forEach(h => el('text', {x:X(h), y:H-m.b+18, 'text-anchor':'middle'}, s, h));
+  el('text', {x:(m.l+W-m.r)/2, y:H-6, 'text-anchor':'middle'}, s, '예측 horizon (시간 뒤)');
+  el('text', {x:12, y:10}, s, 'MAE µg/m³');
+  keys.forEach(k => { const pts = D.horizon_mae[k].map((v, i) => `${X(i+1)},${Y(v)}`).join(' ');
+    el('polyline', {points:pts, fill:'none', stroke:colr(k), 'stroke-width':k==='lstm_w'||k==='cnn_w'?2.6:1.8, 'stroke-dasharray':k==='naive'?'5 4':'none', 'stroke-linejoin':'round'}, s);
+    const v = D.horizon_mae[k][23]; el('circle', {cx:X(24), cy:Y(v), r:3.2, fill:colr(k)}, s); });
+}
+$('models-legend').innerHTML = MODELS.map(k => `<label><input type="checkbox" data-k="${k}" ${shown.has(k)?'checked':''}><i style="background:${colr(k)}"></i>${NAME[k]}</label>`).join('');
+$('models-legend').onchange = e => { e.target.checked ? shown.add(e.target.dataset.k) : shown.delete(e.target.dataset.k); drawHorizon(); };
+{
+  const H = [1,3,6,12,24];
+  $('tbl-models').innerHTML = `<tr><th>모델 (테스트 MAE)</th>${H.map(h=>`<th>${h}h 뒤</th>`).join('')}<th>평균</th><th>다음날 일평균</th></tr>` +
+    MODELS.map(k => `<tr class="${k===best?'hl':''}"><td>${NAME[k]}</td>${H.map(h=>`<td class="num">${f2(D.horizon_mae[k][h-1])}</td>`).join('')}<td class="num">${f2(D.overall[k])}</td><td class="num">${f2(D.daily[k])}</td></tr>`).join('');
+}
+
+/* ---------- ablation ---------- */
+const GROUPS = [['base','PM2.5만 (기준)'],['temp_humid','+ 기온·습도'],['ws','+ 풍속'],['wind_uv','+ 풍속벡터(u, v)'],['weather','+ 기상 전체'],['pollutants','+ 다른 오염물질'],['all','+ 전부']];
+$('win-note').textContent = Object.keys(D.window).map(k => `${k}h: ${f2(D.window[k])}`).join(', ');
+$('ab-find').textContent = `기상 변수를 한꺼번에 넣었을 때 LSTM ${f1(red(D.ablation.lstm.weather[0], D.ablation.lstm.base[0]))}%, LightGBM ${f1(red(D.ablation.lgbm.weather[0], D.ablation.lgbm.base[0]))}% 줄었습니다. 변수 하나씩의 효과는 작습니다.`;
+function drawAblation(model) {
+  const W = cw('chart-ablation'), A = D.ablation[model], rowH = 38, m = {l:W < 520 ? 118 : 150, r:W < 520 ? 70 : 60, t:8, b:28}, H = m.t + m.b + rowH * GROUPS.length, s = svgRoot($('chart-ablation'), W, H);
+  const base = A.base[0], vals = GROUPS.map(([g]) => red(A[g][0], base)), vmax = nice(Math.max(8, ...vals) * 1.1);
+  const X = v => m.l + v / vmax * (W - m.l - m.r);
+  for (let v = 0; v <= vmax + 1e-9; v += vmax / 4) { el('line', {x1:X(v), x2:X(v), y1:m.t, y2:H-m.b, stroke:css('--grid')}, s); el('text', {x:X(v), y:H-m.b+16, 'text-anchor':'middle'}, s, f1(v) + '%'); }
+  GROUPS.forEach(([g, label], i) => {
+    const y = m.t + i * rowH + rowH / 2, v = vals[i]; el('text', {x:m.l-10, y:y+4, 'text-anchor':'end', style:`fill:${css('--ink')};font-size:12.5px`}, s, label);
+    el('rect', {x:m.l, y:y-9, width:Math.max(0, X(v)-m.l), height:18, rx:2, fill:g==='base'?css('--base2'):css('--accent'), opacity:g==='base'?.6:1}, s);
+    const sd = A[g][1] / base * 100; if (g !== 'base' && sd > 0) { el('line', {x1:X(Math.max(0,v-sd)), x2:X(v+sd), y1:y, y2:y, stroke:css('--ink'), 'stroke-width':1.2}, s); el('line', {x1:X(v+sd), x2:X(v+sd), y1:y-5, y2:y+5, stroke:css('--ink')}, s); el('line', {x1:X(Math.max(0,v-sd)), x2:X(Math.max(0,v-sd)), y1:y-5, y2:y+5, stroke:css('--ink')}, s); }
+    el('text', {x:X(v+(g!=='base'&&A[g][1]>0?A[g][1]/base*100:0))+8, y:y+4, style:`fill:${css('--ink')};font-family:var(--mono);font-size:12px`}, s, g==='base' ? `MAE ${f2(A[g][0])}` : `${v>=0?'+':''}${f1(v)}%`);
+  });
+}
+
+/* ---------- 실제 vs 예측 ---------- */
+const sel = {h:6, p:'peak'};
+function drawSeries() {
+  const d = D.series[sel.h][sel.p], n = d.actual.length, W = cw('chart-series'), H = Math.round(W * .42) + 40, m = {l:44, r:14, t:28, b:34}, s = svgRoot($('chart-series'), W, H);
+  const ymax = nice(Math.max(...d.actual, ...d.lstm_w, ...d.persistence) * 1.05), X = i => m.l + i / (n - 1) * (W - m.l - m.r), Y = v => H - m.b - v / ymax * (H - m.t - m.b);
+  for (let v = 0; v <= ymax + 1e-9; v += ymax / 4) { el('line', {x1:m.l, x2:W-m.r, y1:Y(v), y2:Y(v), stroke:css('--grid')}, s); el('text', {x:m.l-8, y:Y(v)+4, 'text-anchor':'end'}, s, Math.round(v)); }
+  const t0 = new Date(d.start + 'T00:00:00');
+  for (let day = 0; day <= 14; day += 2) { const dt = new Date(t0.getTime() + day * 864e5); el('text', {x:X(Math.min(n-1, day*24)), y:H-m.b+18, 'text-anchor':'middle'}, s, `${dt.getMonth()+1}/${dt.getDate()}`); }
+  [['persistence', css('--base'), 1.3], ['lstm_w', css('--accent'), 1.8], ['actual', css('--ink'), 1.6]].forEach(([k, c, w]) => el('polyline', {points:d[k].map((v, i) => `${X(i)},${Y(v)}`).join(' '), fill:'none', stroke:c, 'stroke-width':w, 'stroke-linejoin':'round'}, s));
+  el('text', {x:12, y:10}, s, 'PM2.5 µg/m³');
+  const mae = k => d[k].reduce((a, v, i) => a + Math.abs(v - d.actual[i]), 0) / n;
+  $('series-note').textContent = `${sel.h}시간 뒤 예측, ${d.start}부터 14일. 이 구간 MAE: LSTM+기상 ${f2(mae('lstm_w'))}, persistence ${f2(mae('persistence'))}. ${sel.p === 'peak' ? '테스트 구간에서 평균 농도가 가장 높았던 2주입니다.' : '평균적인 2주(9월)입니다.'}`;
+}
+seg($('s-h'), [[1,'1시간 뒤'],[6,'6시간 뒤'],[24,'24시간 뒤']], 6, v => { sel.h = v; drawSeries(); });
+seg($('s-p'), [['peak','고농도 2주'],['calm','평균적인 2주']], 'peak', v => { sel.p = v; drawSeries(); });
+
+/* ---------- 실패 분석 ---------- */
+const LV = {좋음:['--good','≤15'],보통:['--normal','16~35'],나쁨:['--bad','36~75'],매우나쁨:['--vbad','>75']};
+function drawFail(h) {
+  const rows = D.failure.filter(r => r.h === h), g = (m, l) => rows.find(r => r.model === m && r.level === l);
+  $('tbl-fail').innerHTML = `<tr><th>실제 농도 구간</th><th>시간 수</th><th>persistence MAE</th><th>persistence 편향</th><th>LSTM+기상 MAE</th><th>LSTM+기상 편향</th></tr>` +
+    Object.keys(LV).map(l => { const a = g('persistence', l), b = g('lstm_w', l); return `<tr><td><span class="dot" style="background:var(${LV[l][0]})"></span>${l} (${LV[l][1]})</td><td class="num">${a.n.toLocaleString()}</td><td class="num">${f2(a.mae)}</td><td class="num ${a.bias<-1?'neg':''}">${a.bias>0?'+':''}${f2(a.bias)}</td><td class="num">${f2(b.mae)}</td><td class="num ${b.bias<-1?'neg':''}">${b.bias>0?'+':''}${f2(b.bias)}</td></tr>`; }).join('');
+}
+{
+  const g = (h, m, l) => D.failure.find(r => r.h === h && r.model === m && r.level === l);
+  $('fail-find').textContent = `고농도일수록 과소예측이 커집니다. 24시간 뒤 "나쁨" 구간은 평균 ${f1(-g(24,'lstm_w','나쁨').bias)}µg/m³ 낮게 예측합니다. 6시간 뒤 "매우 나쁨"에서는 LSTM(MAE ${f1(g(6,'lstm_w','매우나쁨').mae)})이 persistence(${f1(g(6,'persistence','매우나쁨').mae)})보다 나쁩니다.`;
+}
+seg($('f-h'), [[1,'1시간 뒤'],[6,'6시간 뒤'],[24,'24시간 뒤']], 6, drawFail);
+
+/* ---------- 고농도 탐지 / 손실 함수 ---------- */
+{
+  const E = D.events, Lz = D.loss, f2n = v => v == null ? '–' : v.toFixed(2);
+  $('ev-find').textContent = 'MAE가 줄어도 나쁨 이상 경보는 persistence보다 나아지지 않았습니다. 고농도에 가중치를 주면 놓침은 줄지만 정밀도와 MAE를 일부 잃습니다.';
+  $('tbl-ev').innerHTML = '<tr><th>모델 (경보 = 예측 35 초과)</th><th>6시간 뒤 재현율</th><th>6시간 뒤 정밀도</th><th>24시간 뒤 재현율</th><th>24시간 뒤 정밀도</th><th>24시간 뒤 AP</th></tr>' +
+    E.rows.map(r => `<tr class="${r.model === 'persistence' ? 'hl' : ''}"><td>${r.model}</td><td class="num">${f2n(r.r6)}</td><td class="num">${f2n(r.p6)}</td><td class="num">${f2n(r.r24)}</td><td class="num">${f2n(r.p24)}</td><td class="num">${f2n(r.ap24)}</td></tr>`).join('');
+  $('ev-note').textContent = `나쁨 이상(PM2.5 35 초과)은 테스트 ${E.n_total.toLocaleString()}시간 중 ${E.n_events}시간입니다. 재현율은 실제 고농도 중 경보한 비율, 정밀도는 경보 중 맞은 비율, AP는 경보 임계값과 무관한 순위 지표입니다. 24시간 뒤에는 모든 모델이 거의 놓치고, LightGBM은 경보가 한 번도 없어 정밀도를 계산할 수 없습니다(–). 고농도가 181시간뿐이라 소수점 둘째 자리는 의미가 작습니다.`;
+  const nm = {cnn: '1D-CNN+기상', lstm: 'LSTM+기상'}, ln = {l1: '기본(L1)', wl1: '고농도 가중', q70: '분위수 0.7'};
+  $('tbl-loss').innerHTML = '<tr><th>모델 · 손실 함수</th><th>MAE</th><th>24h 나쁨 구간 편향</th><th>6h 재현율</th><th>6h 정밀도</th><th>24h 재현율</th><th>24h 정밀도</th></tr>' +
+    `<tr><td>persistence (기준)</td><td class="num">${f2(D.overall.persistence)}</td><td class="num">${Lz.persistence_bias24.toFixed(1)}</td><td class="num">${f2n(E.rows[0].r6)}</td><td class="num">${f2n(E.rows[0].p6)}</td><td class="num">${f2n(E.rows[0].r24)}</td><td class="num">${f2n(E.rows[0].p24)}</td></tr>` +
+    Lz.rows.map(r => `<tr class="${r.loss === 'wl1' ? 'hl' : ''}"><td>${nm[r.model]} · ${ln[r.loss]}</td><td class="num">${r.mae.toFixed(2)}</td><td class="num">${r.bias24.toFixed(1)}</td><td class="num">${r.r6.toFixed(2)}</td><td class="num">${r.p6.toFixed(2)}</td><td class="num">${r.r24.toFixed(2)}</td><td class="num">${r.p24.toFixed(2)}</td></tr>`).join('');
+}
+
+/* ---------- 장기 데이터 ---------- */
+{
+  const Lg = D.long, sg = v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(1);
+  $('tbl-long').innerHTML = '<tr><th>persistence 대비 MAE 감소율 (95% 구간)</th>' + Lg.cols.map(c => `<th>${c}</th>`).join('') + '</tr>' +
+    Lg.rows.map(r => `<tr><td>${r.model}</td>${r.cells.map(c => `<td class="num">${sg(c[0])}% (${sg(c[1])}~${sg(c[2])})</td>`).join('')}</tr>`).join('') +
+    `<tr><td style="color:var(--muted)">persistence MAE</td>${Lg.pers.map(v => `<td class="num" style="color:var(--muted)">${v.toFixed(2)}</td>`).join('')}</tr>`;
+  $('long-note').textContent = `서울 열린데이터광장에서 2018~2023년과 2026년 1~9월을 추가로 받아 같은 전처리로 이어 붙였습니다(2018-01-01 ~ 2026-09-30, 76,680시간). 2026년 1~9월은 어떤 학습·튜닝에도 쓰지 않은 구간이고 고농도(35 초과)가 ${Lg.n_high_2026}시간입니다. 구간은 하루 단위 부트스트랩 95% 구간이며 0을 포함하면 persistence와 구분되지 않습니다. 학습 1년의 2025-07~12 결과는 앞서 낸 결과와 정확히 같습니다(재현 검증). 고농도 놓침은 데이터를 늘려도 그대로였습니다(2026, 1D-CNN+기상: 24시간 뒤 나쁨 구간 편향 −20.5 → −19.4). 2026 자료는 확정 전 자료이고 연도별 추세가 섞였을 수 있으며, 신경망은 시드 3개 앙상블, LightGBM은 단일 모델입니다.`;
+}
+
+{
+  const C = D.curve, sg = v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(1);
+  $('tbl-curve').innerHTML = '<tr><th>persistence 대비 MAE 감소율</th>' + C.sets.map(s => `<th>${s.replace(' (', '<br>(')}</th>`).join('') + '</tr>' +
+    C.rows.map(r => `<tr><td>${r.model}</td>${r.red.map(v => `<td class="num">${sg(v)}%</td>`).join('')}</tr>`).join('') +
+    `<tr><td style="color:var(--muted)">1D-CNN+기상, 24시간 뒤 나쁨 구간 편향 (persistence ${sg(C.pers_bias24)})</td>${C.bias24.map(v => `<td class="num" style="color:var(--muted)">${sg(v)}</td>`).join('')}</tr>` +
+    `<tr><td style="color:var(--muted)">persistence MAE</td>${C.sets.map(() => `<td class="num" style="color:var(--muted)">${C.pers.toFixed(2)}</td>`).join('')}</tr>`;
+  $('curve-note').textContent = '학습은 항상 2024년 말까지이고 검증 2025-01~06, 평가 2026-01~09는 모든 설정에서 같습니다. 신경망은 GPU로 시드 5개 앙상블이라 위 표(CPU, 시드 3개)와 소수점이 조금 다릅니다. 5년까지 좋아지다 7년에서는 늘지 않고, 코로나 시기(2020~2021)를 빼도 거의 같습니다. 고농도 놓침은 7년을 학습해도 그대로여서 데이터 양보다 입력 정보 부족으로 보입니다(추정). 신경망과 LightGBM+기상의 우열은 학습 연수와 평가 구간에 따라 달라 일관되지 않습니다.';
+}
+
+/* ---------- walk-forward ---------- */
+const FOLDS = ['2025Q1','2025Q2','2025Q3','2025Q4'], WM = ['lgbm','lgbm_w','lstm','lstm_w','cnn','cnn_w'];
+const avg = o => Object.values(o).reduce((a, b) => a + b) / Object.values(o).length;
+$('wf-find').textContent = `LSTM·CNN은 네 분기 모두 persistence보다 낮고, 기상 변수를 넣으면 매번 더 낮아졌습니다. LightGBM은 분기에 따라 persistence보다 나쁩니다.`;
+$('wf-legend').innerHTML = FOLDS.map((f, i) => `<span><i style="background:${['#7aa7e8','#4f86d6','#2c63b8','#16407f'][i]}"></i>${f.replace('2025','')} (평균 PM2.5 ${D.wf.mean_pm25[f]})</span>`).join('');
+function drawWf() {
+  const W = cw('chart-wf'), H = Math.round(W * .42) + 60, m = {l:48, r:12, t:28, b:56}, s = svgRoot($('chart-wf'), W, H), fc = ['#7aa7e8','#4f86d6','#2c63b8','#16407f'];
+  const all = WM.flatMap(k => FOLDS.map(f => D.wf.red[k][f])), lo = -Math.ceil(Math.max(5, -Math.min(...all)) / 5) * 5, hi = Math.ceil(Math.max(...all) / 5) * 5;
+  const Y = v => m.t + (hi - v) / (hi - lo) * (H - m.t - m.b), gw = (W - m.l - m.r) / WM.length, bw = (gw - 16) / 4;
+  for (let v = lo; v <= hi; v += 5) { el('line', {x1:m.l, x2:W-m.r, y1:Y(v), y2:Y(v), stroke:v===0?css('--ink'):css('--grid'), 'stroke-width':v===0?1.2:1}, s); el('text', {x:m.l-8, y:Y(v)+4, 'text-anchor':'end'}, s, v + '%'); }
+  WM.forEach((k, i) => { FOLDS.forEach((f, j) => { const v = D.wf.red[k][f], x = m.l + i * gw + 8 + j * bw; el('rect', {x, y:Math.min(Y(0), Y(v)), width:bw-2, height:Math.abs(Y(v)-Y(0)), fill:fc[j], rx:1.5}, s); });
+    el('text', {x:m.l + i*gw + gw/2, y:H-m.b+18, 'text-anchor':'middle', style:`fill:${css('--ink')};font-size:12px`}, s, NAME[k].replace(' + 기상','').replace('1D-',''));
+    if (k.endsWith('_w')) el('text', {x:m.l + i*gw + gw/2, y:H-m.b+33, 'text-anchor':'middle'}, s, '+ 기상'); });
+  el('text', {x:12, y:10}, s, 'persistence 대비 MAE 감소율');
+}
+$('tbl-wf').innerHTML = `<tr><th>모델 (MAE)</th>${FOLDS.map(f=>`<th>${f.replace('2025','')}</th>`).join('')}<th>평균 감소율</th></tr>` +
+  ['naive','persistence',...WM].map(k => `<tr class="${k===best?'hl':''}"><td>${NAME[k]}</td>${FOLDS.map(f=>`<td class="num">${f2(D.wf.mae[k][f])}</td>`).join('')}<td class="num ${avg(D.wf.red[k])<0?'neg':avg(D.wf.red[k])>0?'pos':''}">${k==='persistence'?'기준':(avg(D.wf.red[k])>0?'+':'')+f1(avg(D.wf.red[k]))+'%'}</td></tr>`).join('') +
+  `<tr><td style="color:var(--muted)">75µg/m³ 초과 시간</td>${FOLDS.map(f=>`<td class="num" style="color:var(--muted)">${D.wf.n_hours_gt75[f]}h</td>`).join('')}<td></td></tr>`;
+
+/* ---------- ONNX ---------- */
+{
+  const c = D.onnx.find(r => r.model === 'cnn'), l = D.onnx.find(r => r.model === 'lstm');
+  $('onnx-find').textContent = `1D-CNN과 LSTM을 ONNX로 변환했고, 변환한 모델로 요청 1건을 ${f2(c.onnx_b1_p50_ms)}~${f2(l.onnx_b1_p50_ms)}ms에 예측합니다.`;
+  const row = (n, r) => `<tr><td>${n}</td><td class="num">${f2(r.onnx_MB)} MB</td><td class="num">${f2(r.test_MAE_onnx)}</td><td class="num">${f2(r.onnx_b1_p50_ms)} ms</td><td class="num">${f2(r.onnx_b1_p95_ms)} ms</td></tr>`;
+  $('tbl-onnx').innerHTML = `<tr><th>ONNX 모델 (+기상, 학습 5년, 시드 0)</th><th>파일 크기</th><th>테스트 MAE</th><th>추론 p50 (배치 1)</th><th>추론 p95 (배치 1)</th></tr>${row('1D-CNN', c)}${row('LSTM', l)}`;
+}
+
+let abModel = 'lstm';
+seg($('ab-model'), [['lstm','LSTM'],['lgbm','LightGBM']], 'lstm', v => { abModel = v; drawAblation(v); });
+const drawAll = () => { drawHorizon(); drawAblation(abModel); drawSeries(); drawWf(); };
+drawAll(); drawFail(6);
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawAll, 120); });
+</script>

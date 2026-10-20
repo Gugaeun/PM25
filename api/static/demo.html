@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>서울 PM2.5 예측 데모</title>
+<style>
+:root{--bg:#f6f8fa;--surface:#fff;--ink:#14212e;--muted:#5a6b7b;--line:#dbe2e9;--grid:#e8edf2;--accent:#1d5fd0;--accent-soft:#e3edfc;--warn-bg:#fff6e5;--warn-line:#f0d49a;--warn-ink:#6b4a05;--bad:#c93a3f;--font:'Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif;--mono:ui-monospace,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1720;--surface:#17212c;--ink:#e6edf4;--muted:#93a4b5;--line:#2a3846;--grid:#223040;--accent:#6ea2f5;--accent-soft:#1c2c47;--warn-bg:#2a2210;--warn-line:#5a4716;--warn-ink:#e8cf8f;--bad:#ee6b70;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;padding:28px max(16px,env(safe-area-inset-right,0px)) 56px max(16px,env(safe-area-inset-left,0px))}
+main{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font-size:clamp(24px,5vw,32px);margin:0;line-height:1.25}
+p{margin:0}
+.muted{color:var(--muted);font-size:13px}
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn-ink);border-radius:10px;padding:12px 14px;font-size:13.5px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.form{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
+label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+input,select,button{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+button.go{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;cursor:pointer;padding:8px 18px}
+button.go:disabled{opacity:.6;cursor:wait}
+button.ex{cursor:pointer;font-size:12.5px;padding:5px 10px}
+button.ex:hover{border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.examples{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin-top:12px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.stat b{display:block;font-family:var(--mono);font-size:22px;font-weight:600}
+.stat span{font-size:12px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;margin-bottom:8px}
+.legend i{display:inline-block;width:18px;height:3px;margin-right:6px;vertical-align:middle;border-radius:2px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{fill:var(--muted);font-size:11px;font-family:var(--font)}
+.tablewrap{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:420px}
+th,td{padding:5px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td.n{font-family:var(--mono)}
+#err{color:var(--bad);font-size:13.5px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>서울 PM2.5 예측 데모</h1>
+    <p class="muted" style="margin-top:6px">시점을 고르면 그때까지의 최근 48시간 값을 API(<code>POST /predict</code>)에 보내 1~24시간 뒤 PM2.5를 예측하고, 실제값과 겹쳐 보여줍니다. &nbsp;<a href="/live">지금 시각의 실시간 예측 →</a></p>
+  </header>
+
+  <div class="warn"><b>실시간 예측이 아닙니다.</b> 이미 지난 데이터를 "그 시점의 현재"처럼 넣어 본 재현입니다. 모델이 학습·검증에 쓰지 않은 기간(2025-07 이후)만 고를 수 있습니다. 사용 모델: <span id="model">…</span></div>
+
+  <div class="card">
+    <div class="form">
+      <label>날짜<input type="date" id="date"></label>
+      <label>시각 (이 시각까지의 값을 사용)<select id="hour"></select></label>
+      <button class="go" id="go">예측하기</button>
+    </div>
+    <div class="examples">
+      <span class="muted">예시</span>
+      <button class="ex" data-t="2025-11-24T09:00">11/24 고농도 시작 무렵</button>
+      <button class="ex" data-t="2025-12-07T09:00">12/7 아침</button>
+      <button class="ex" data-t="2025-12-17T09:00">12/17 아침</button>
+      <button class="ex" data-t="2025-09-01T09:00">9/1 평범한 날</button>
+    </div>
+    <p id="err" style="margin-top:10px"></p>
+  </div>
+
+  <div class="card" id="result" hidden>
+    <div class="stats" id="stats"></div>
+    <div class="legend">
+      <span><i style="background:var(--ink)"></i>실제값</span>
+      <span><i style="background:var(--accent)"></i>예측값</span>
+    </div>
+    <div id="chart"></div>
+    <div class="tablewrap"><table id="tbl"></table></div>
+    <p class="muted" style="margin-top:10px" id="foot"></p>
+  </div>
+  <p class="muted">데이터 출처: 서울 열린데이터광장 서울시 대기오염물질 측정정보(공공누리 제1유형, 확정 전 자료). 25개 구 측정소 평균은 이 프로젝트에서 계산했습니다.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const el = (t, a, p, x) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (x != null) e.textContent = x; p && p.appendChild(e); return e; };
+const f1 = v => v.toFixed(1);
+let range = null;
+
+for (let h = 0; h < 24; h++) $('hour').add(new Option(String(h).padStart(2, '0') + ':00', h));
+
+async function init() {
+  try {
+    range = await (await fetch('/demo/range')).json();
+    $('model').textContent = range.model;
+    $('date').min = range.first.slice(0, 10); $('date').max = range.last.slice(0, 10);
+    $('date').value = '2025-11-24'; $('hour').value = 9;
+    run();
+  } catch (e) { $('err').textContent = '서버에 연결하지 못했습니다. 터미널에서 서버가 켜져 있는지 확인하세요.'; }
+}
+
+function pick(t) { $('date').value = t.slice(0, 10); $('hour').value = Number(t.slice(11, 13)); run(); }
+document.querySelectorAll('.ex').forEach(b => b.onclick = () => pick(b.dataset.t));
+$('go').onclick = run;
+
+async function run() {
+  $('err').textContent = '';
+  const t = `${$('date').value}T${String($('hour').value).padStart(2, '0')}:00:00`;
+  if (!$('date').value) { $('err').textContent = '날짜를 고르세요.'; return; }
+  $('go').disabled = true;
+  try {
+    const w = await fetch('/demo/window?end_time=' + encodeURIComponent(t));
+    if (!w.ok) throw new Error(`선택할 수 없는 시점입니다. ${range.first.slice(0, 10)} ~ ${range.last.slice(0, 10)} 사이로 골라 주세요.`);
+    const win = await w.json();
+    const p = await fetch('/predict', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({end_time: win.end_time, history: win.history})});
+    if (!p.ok) throw new Error('예측 요청이 실패했습니다: ' + await p.text());
+    show(win, await p.json());
+  } catch (e) { $('err').textContent = e.message; }
+  $('go').disabled = false;
+}
+
+function show(win, pred) {
+  const past = win.history.PM25, act = win.actual_next_24h, pr = pred.pm25_pred, n = past.length;
+  const mae = pr.reduce((a, v, i) => a + Math.abs(v - act[i]), 0) / 24;
+  const mP = pr.reduce((a, b) => a + b) / 24, mA = act.reduce((a, b) => a + b) / 24;
+  $('result').hidden = false;
+  $('stats').innerHTML = [
+    [f1(pr[0]) + ' / ' + f1(act[0]), '1시간 뒤 예측 / 실제'],
+    [f1(pr[23]) + ' / ' + f1(act[23]), '24시간 뒤 예측 / 실제'],
+    [f1(mP) + ' / ' + f1(mA), '이후 24시간 평균 예측 / 실제'],
+    [f1(mae), '24시간 평균 오차 (MAE, µg/m³)'],
+  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+  // 차트: x = 예측 시점 기준 시간 (-47 … +24)
+  const host = $('chart'); host.innerHTML = '';
+  const W = Math.max(320, Math.min(760, host.clientWidth || 760)), H = Math.round(W * .42) + 40, m = {l:40, r:12, t:26, b:34};
+  const s = el('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img'}, host);
+  const all = [...past, ...act, ...pr], ymax = Math.max(20, Math.ceil(Math.max(...all) * 1.05 / 20) * 20);
+  const X = k => m.l + (k + n - 1) / (n - 1 + 24) * (W - m.l - m.r), Y = v => H - m.b - v / ymax * (H - m.t - m.b);
+  for (let i = 0; i <= 4; i++) { const v = ymax * i / 4; el('line', {x1:m.l, x2:W-m.r, y1:Y(v), y2:Y(v), stroke:css('--grid')}, s); el('text', {x:m.l-6, y:Y(v)+4, 'text-anchor':'end'}, s, Math.round(v)); }
+  [-48, -36, -24, -12, 0, 12, 24].forEach(k => { const kk = Math.max(k, -(n - 1)); el('text', {x:X(kk), y:H-m.b+16, 'text-anchor':'middle'}, s, k === 0 ? '예측 시점' : (k > 0 ? '+' : '') + k + 'h'); });
+  el('text', {x:12, y:10}, s, 'PM2.5 µg/m³');
+  el('rect', {x:X(0), y:m.t, width:X(24) - X(0), height:H - m.t - m.b, fill:css('--accent-soft'), opacity:.5}, s);
+  const line = (vals, k0, color, w) => el('polyline', {points: vals.map((v, i) => `${X(k0 + i)},${Y(v)}`).join(' '), fill:'none', stroke:color, 'stroke-width':w, 'stroke-linejoin':'round'}, s);
+  line(past, -(n - 1), css('--ink'), 1.8);
+  line([past[n - 1], ...act], 0, css('--ink'), 1.8);
+  line([past[n - 1], ...pr], 0, css('--accent'), 2.6);
+  el('line', {x1:X(0), x2:X(0), y1:m.t, y2:H - m.b, stroke:css('--muted'), 'stroke-dasharray':'3 3'}, s);
+  // 표
+  const hs = [1, 3, 6, 12, 18, 24];
+  $('tbl').innerHTML = `<tr><th>${win.end_time.replace('T', ' ').slice(0, 16)} 기준</th>${hs.map(h => `<th>${h}h 뒤</th>`).join('')}</tr>` +
+    `<tr><td>예측</td>${hs.map(h => `<td class="n">${f1(pr[h-1])}</td>`).join('')}</tr><tr><td>실제</td>${hs.map(h => `<td class="n">${f1(act[h-1])}</td>`).join('')}</tr>`;
+  $('foot').textContent = `예측선은 예측 시점 값에서 이어서 그렸습니다. 모델 입력은 이 시점까지의 ${n}시간 PM2.5·기온·습도·풍속·풍속벡터입니다.`;
+}
+addEventListener('resize', () => { if (!$('result').hidden) run(); });
+init();
+</script>
+</body>
+</html>

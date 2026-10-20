@@ -1,0 +1,3 @@
+model,onnx_MB,max_abs_diff(µg/m³),test_MAE_torch,test_MAE_onnx,torch_b1_p50_ms,torch_b1_p95_ms,onnx_b1_p50_ms,onnx_b1_p95_ms,torch_b64_p50_ms,onnx_b64_p50_ms,speedup_b1_p50,dynamic_seq_ok
+cnn,0.5506,0.0,4.4904,4.4904,0.3976,0.6298,0.1037,0.1654,2.3775,3.128,3.8341,
+lstm,0.2367,0.0,4.4669,4.4669,0.5907,0.918,0.2857,0.3663,3.8178,2.3641,2.0674,True

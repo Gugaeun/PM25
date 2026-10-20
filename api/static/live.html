@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>서울 PM2.5 실시간 예측</title>
+<style>
+:root{--bg:#ffffff;--surface:#f1f4f7;--ink:#14212e;--muted:#51606f;--line:#dbe2e9;--grid:#e3e9ef;--accent:#1d5fd0;--warn-bg:#fff6e5;--warn-line:#f0d49a;--warn-ink:#6b4a05;--bad:#c93a3f;--good:#2f7de1;--normal:#2e9d62;--bad2:#b85c12;--vbad:#c93a3f;--font:'Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif;--mono:ui-monospace,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1720;--surface:#17212c;--ink:#e6edf4;--muted:#93a4b5;--line:#2a3846;--grid:#223040;--accent:#6ea2f5;--warn-bg:#2a2210;--warn-line:#5a4716;--warn-ink:#e8cf8f;--bad:#ee6b70;--good:#5b9cf0;--normal:#4cbb85;--bad2:#eba24a;--vbad:#ee6b70;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.6;padding:28px max(16px,env(safe-area-inset-right,0px)) 56px max(16px,env(safe-area-inset-left,0px))}
+main{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font-size:clamp(24px,5vw,32px);margin:0;line-height:1.25}
+p{margin:0}
+a{color:var(--accent)}
+.muted{color:var(--muted);font-size:13px}
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn-ink);border-radius:10px;padding:12px 14px;font-size:13.5px}
+.card{background:var(--surface);border-radius:12px;padding:18px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+button{font:inherit;font-size:14px;color:#fff;background:var(--accent);border:1px solid var(--accent);border-radius:8px;padding:8px 18px;font-weight:600;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.stat b{display:block;font-family:var(--mono);font-size:24px;font-weight:600}
+.stat span{font-size:12px;color:var(--muted)}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:1px 8px;border-radius:99px;color:#fff;margin-left:6px;vertical-align:middle}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;margin-bottom:8px}
+.legend i{display:inline-block;width:18px;height:3px;margin-right:6px;vertical-align:middle;border-radius:2px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{fill:var(--muted);font-size:11px;font-family:var(--font)}
+.tablewrap{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:420px}
+th,td{padding:5px 9px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td.n{font-family:var(--mono)}
+#err{color:var(--bad);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>서울 PM2.5 실시간 예측</h1>
+    <p class="muted" style="margin-top:6px">에어코리아에서 서울 25개 구의 최근 48시간 PM2.5를 받아, 지금부터 24시간 뒤까지 예측합니다. &nbsp;<a href="/">지난 데이터 재현 데모</a></p>
+  </header>
+
+  <div class="warn"><b>참고용입니다.</b> 값은 에어코리아의 <b>확정 전 실시간 자료</b>이고, 기온·습도·풍속 없이 PM2.5 과거 값만 쓰는 모델입니다(기상 변수를 넣은 모델보다 오차가 큽니다). 사용 모델: <span id="model">…</span></div>
+
+  <div class="card">
+    <div class="row">
+      <p class="muted" id="status">에어코리아에서 25개 구 값을 불러오는 중입니다. 처음에는 20초 정도 걸립니다.</p>
+      <button id="go">다시 불러오기</button>
+    </div>
+    <p id="err" style="margin-top:8px"></p>
+  </div>
+
+  <div class="card" id="result" hidden>
+    <div class="stats" id="stats"></div>
+    <div class="legend">
+      <span><i style="background:var(--ink)"></i>실제 (최근 48시간, 서울 25개 구 평균)</span>
+      <span><i style="background:var(--accent)"></i>예측 (앞으로 24시간)</span>
+    </div>
+    <div id="chart"></div>
+    <div class="tablewrap"><table id="tbl"></table></div>
+    <p class="muted" style="margin-top:10px" id="foot"></p>
+  </div>
+  <p class="muted">데이터 출처: 한국환경공단 에어코리아 대기오염정보(공공데이터포털 OpenAPI). 이용 조건은 해당 서비스 페이지를 따릅니다. 서울 25개 구 평균은 이 프로젝트에서 계산했습니다.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const el = (t, a, p, x) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (x != null) e.textContent = x; p && p.appendChild(e); return e; };
+const f1 = v => v.toFixed(1);
+const level = v => v <= 15 ? ['좋음', '--good'] : v <= 35 ? ['보통', '--normal'] : v <= 75 ? ['나쁨', '--bad2'] : ['매우 나쁨', '--vbad'];
+const chip = v => { const [t, c] = level(v); return `<span class="chip" style="background:${css(c)}">${t}</span>`; };
+let last = null;
+
+async function load(refresh) {
+  $('err').textContent = ''; $('go').disabled = true;
+  $('status').textContent = '에어코리아에서 25개 구 값을 불러오는 중입니다. 처음에는 20초 정도 걸립니다.';
+  try {
+    const r = await fetch('/live/predict' + (refresh ? '?refresh=true' : ''));
+    if (!r.ok) { let d = ''; try { d = (await r.json()).detail; } catch (e) {} throw new Error(r.status === 503 ? '서버 설정이 필요합니다: ' + d : '에어코리아에서 값을 받지 못했습니다: ' + d); }
+    last = await r.json(); show(last);
+  } catch (e) { $('err').textContent = e.message || '서버에 연결하지 못했습니다. 터미널에서 서버가 켜져 있는지 확인하세요.'; $('status').textContent = ''; }
+  $('go').disabled = false;
+}
+$('go').onclick = () => load(true);
+
+function show(d) {
+  const h = d.history_pm25, p = d.pm25_pred, n = h.length;
+  $('model').textContent = d.model;
+  const end = d.end_time.replace('T', ' ').slice(0, 16);
+  $('status').textContent = `기준 시각 ${end} (한국 시간) · 측정소 ${d.stations_ok}/25개 수신 · 조회 ${d.fetched_at.replace('T', ' ')}${d.cached ? ' (10분 안에 받은 결과 재사용)' : ''}`;
+  $('result').hidden = false;
+  const now = h[n - 1], mean = d.mean_next_24h;
+  $('stats').innerHTML = [
+    [f1(now) + chip(now), `지금(${end.slice(11)}) 서울 평균`],
+    [f1(p[0]), '1시간 뒤 예측'],
+    [f1(p[11]), '12시간 뒤 예측'],
+    [f1(p[23]), '24시간 뒤 예측'],
+    [f1(mean) + chip(mean), '앞으로 24시간 평균 예측'],
+  ].map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');
+  const host = $('chart'); host.innerHTML = '';
+  const W = Math.max(320, Math.min(760, host.clientWidth || 760)), H = Math.round(W * .42) + 40, m = {l:40, r:12, t:26, b:34};
+  const s = el('svg', {viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '최근 48시간 PM2.5 실제값과 앞으로 24시간 예측'}, host);
+  const ymax = Math.max(20, Math.ceil(Math.max(...h, ...p) * 1.1 / 20) * 20);
+  const X = k => m.l + (k + n - 1) / (n - 1 + 24) * (W - m.l - m.r), Y = v => H - m.b - v / ymax * (H - m.t - m.b);
+  for (let i = 0; i <= 4; i++) { const v = ymax * i / 4; el('line', {x1:m.l, x2:W-m.r, y1:Y(v), y2:Y(v), stroke:css('--grid')}, s); el('text', {x:m.l-6, y:Y(v)+4, 'text-anchor':'end'}, s, Math.round(v)); }
+  [-48, -36, -24, -12, 0, 12, 24].forEach(k => { const kk = Math.max(k, -(n - 1)); el('text', {x:X(kk), y:H-m.b+16, 'text-anchor':'middle'}, s, k === 0 ? '지금' : (k > 0 ? '+' : '') + k + 'h'); });
+  el('text', {x:12, y:10}, s, 'PM2.5 µg/m³');
+  el('rect', {x:X(0), y:m.t, width:X(24) - X(0), height:H - m.t - m.b, fill:css('--accent'), opacity:.08}, s);
+  const line = (vals, k0, color, w) => el('polyline', {points: vals.map((v, i) => `${X(k0 + i)},${Y(v)}`).join(' '), fill:'none', stroke:color, 'stroke-width':w, 'stroke-linejoin':'round'}, s);
+  line(h, -(n - 1), css('--ink'), 1.8);
+  line([h[n - 1], ...p], 0, css('--accent'), 2.6);
+  el('line', {x1:X(0), x2:X(0), y1:m.t, y2:H - m.b, stroke:css('--muted'), 'stroke-dasharray':'3 3'}, s);
+  const hs = [1, 3, 6, 12, 18, 24];
+  const at = k => { const t = new Date(d.end_time); t.setHours(t.getHours() + k); return `${t.getMonth() + 1}/${t.getDate()} ${String(t.getHours()).padStart(2, '0')}시`; };
+  $('tbl').innerHTML = `<tr><th>예측 시점</th>${hs.map(k => `<th>${k}시간 뒤<br><span class="muted" style="font-weight:400">${at(k)}</span></th>`).join('')}</tr>` +
+    `<tr><td>예측 PM2.5</td>${hs.map(k => `<td class="n">${f1(p[k - 1])}</td>`).join('')}</tr>`;
+  $('foot').textContent = '실제값이 나오면 맞았는지 확인할 수 있습니다. 같은 모델(학습 5년, 시드 1개)은 지난 데이터 평가(2025-07~12)에서 1~24시간 평균 오차(MAE)가 약 4.9µg/m³였습니다. 갑작스러운 고농도 유입은 놓치는 경향이 있습니다.';
+}
+addEventListener('resize', () => { if (last) show(last); });
+fetch('/health').then(r => r.json()).then(h => { $('model').textContent = h.live_model || '…'; }).catch(() => {});
+load(false);
+</script>
+</body>
+</html>

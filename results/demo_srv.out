@@ -1,0 +1,10 @@
+INFO:     127.0.0.1:57100 - "GET /demo/range HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57100 - "GET /demo/window?end_time=2025-11-24T09:00:00 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57100 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62238 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62238 - "GET /demo/range HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62238 - "GET /demo/window?end_time=2025-11-24T09%3A00%3A00 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65029 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:65029 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65029 - "GET /demo/window?end_time=2025-11-24T09%3A00%3A00 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65029 - "POST /predict HTTP/1.1" 200 OK

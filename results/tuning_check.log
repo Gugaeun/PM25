@@ -1,0 +1,56 @@
+  lgbm[base] cfg 0: val MAE(1·6·12·24h) 7.153
+  lgbm[base] cfg 1: val MAE(1·6·12·24h) 7.329
+  lgbm[base] cfg 2: val MAE(1·6·12·24h) 7.183
+  lgbm[base] cfg 3: val MAE(1·6·12·24h) 7.285
+  lgbm[base] cfg 4: val MAE(1·6·12·24h) 7.075
+  lgbm[base] cfg 5: val MAE(1·6·12·24h) 7.196
+  lgbm[base] cfg 6: val MAE(1·6·12·24h) 7.239
+  lgbm[base] cfg 7: val MAE(1·6·12·24h) 7.000
+  lgbm[base] cfg 8: val MAE(1·6·12·24h) 7.036
+  lgbm[base] cfg 9: val MAE(1·6·12·24h) 7.064
+  lgbm[base] cfg 10: val MAE(1·6·12·24h) 7.234
+  lgbm[base] cfg 11: val MAE(1·6·12·24h) 7.047
+  lgbm[base] cfg 12: val MAE(1·6·12·24h) 6.924
+  lgbm[base] cfg 13: val MAE(1·6·12·24h) 7.202
+  lgbm[base] cfg 14: val MAE(1·6·12·24h) 7.046
+  lgbm[base] cfg 15: val MAE(1·6·12·24h) 7.017
+  lgbm[base] cfg 16: val MAE(1·6·12·24h) 7.041
+  lgbm[weather] cfg 0: val MAE(1·6·12·24h) 6.834
+  lgbm[weather] cfg 1: val MAE(1·6·12·24h) 7.025
+  lgbm[weather] cfg 2: val MAE(1·6·12·24h) 6.892
+  lgbm[weather] cfg 3: val MAE(1·6·12·24h) 7.006
+  lgbm[weather] cfg 4: val MAE(1·6·12·24h) 6.791
+  lgbm[weather] cfg 5: val MAE(1·6·12·24h) 6.971
+  lgbm[weather] cfg 6: val MAE(1·6·12·24h) 6.925
+  lgbm[weather] cfg 7: val MAE(1·6·12·24h) 6.776
+  lgbm[weather] cfg 8: val MAE(1·6·12·24h) 6.794
+  lgbm[weather] cfg 9: val MAE(1·6·12·24h) 6.800
+  lgbm[weather] cfg 10: val MAE(1·6·12·24h) 6.978
+  lgbm[weather] cfg 11: val MAE(1·6·12·24h) 6.741
+  lgbm[weather] cfg 12: val MAE(1·6·12·24h) 6.723
+  lgbm[weather] cfg 13: val MAE(1·6·12·24h) 6.902
+  lgbm[weather] cfg 14: val MAE(1·6·12·24h) 6.792
+  lgbm[weather] cfg 15: val MAE(1·6·12·24h) 6.776
+  lgbm[weather] cfg 16: val MAE(1·6·12·24h) 6.787
+  cnn cfg 0 {'hidden': 64, 'drop': 0.1, 'lr': 0.002, 'wd': 0.0001}: val MAE 7.524
+  cnn cfg 1 {'hidden': 32, 'drop': 0.1, 'lr': 0.002, 'wd': 0.0001}: val MAE 7.272
+  cnn cfg 2 {'hidden': 128, 'drop': 0.1, 'lr': 0.002, 'wd': 0.0001}: val MAE 7.368
+  cnn cfg 3 {'hidden': 64, 'drop': 0.3, 'lr': 0.002, 'wd': 0.0001}: val MAE 7.527
+  cnn cfg 4 {'hidden': 64, 'drop': 0.1, 'lr': 0.001, 'wd': 0.0001}: val MAE 7.413
+  cnn cfg 5 {'hidden': 128, 'drop': 0.3, 'lr': 0.001, 'wd': 0.001}: val MAE 7.343
+  lstm cfg 0 {'hidden': 64, 'drop': 0.1, 'lr': 0.002, 'wd': 0.0001}: val MAE 7.179
+  lstm cfg 1 {'hidden': 32, 'drop': 0.1, 'lr': 0.002, 'wd': 0.0001}: val MAE 7.039
+  lstm cfg 2 {'hidden': 128, 'drop': 0.1, 'lr': 0.002, 'wd': 0.0001}: val MAE 7.201
+  lstm cfg 3 {'hidden': 64, 'drop': 0.3, 'lr': 0.002, 'wd': 0.0001}: val MAE 7.176
+  lstm cfg 4 {'hidden': 64, 'drop': 0.1, 'lr': 0.001, 'wd': 0.0001}: val MAE 7.089
+  lstm cfg 5 {'hidden': 128, 'drop': 0.3, 'lr': 0.001, 'wd': 0.001}: val MAE 7.141
+              모델      설정  검증 MAE  테스트 MAE  기본이 최선
+LightGBM(PM2.5만) default   8.340    5.129   False
+LightGBM(PM2.5만)   tuned   7.930    5.111   False
+   LightGBM(+기상) default   7.934    4.904   False
+   LightGBM(+기상)   tuned   7.675    4.858   False
+       1D-CNN+기상 default   7.324    4.550   False
+       1D-CNN+기상   tuned   7.222    4.591   False
+         LSTM+기상 default   7.180    4.562   False
+         LSTM+기상   tuned   7.062    4.498   False
+총 825초

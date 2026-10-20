@@ -1,0 +1,9 @@
+﻿모델,설정,검증 MAE,테스트 MAE,선택된 설정,기본이 최선
+LightGBM(PM2.5만),default,8.340408698356502,5.129295657201275,기본,False
+LightGBM(PM2.5만),tuned,7.930260840820626,5.11137561261739,"{'n_estimators': 1000, 'learning_rate': 0.05, 'num_leaves': 7, 'min_child_samples': 160, 'subsample': 1.0, 'colsample_bytree': 0.9, 'reg_lambda': 1.0}",False
+LightGBM(+기상),default,7.934431685953279,4.904180749773675,기본,False
+LightGBM(+기상),tuned,7.6746237906075825,4.857713480037705,"{'n_estimators': 1000, 'learning_rate': 0.05, 'num_leaves': 7, 'min_child_samples': 160, 'subsample': 1.0, 'colsample_bytree': 0.9, 'reg_lambda': 1.0}",False
+1D-CNN+기상,default,7.323904062615329,4.5500119405597985,"{'hidden': 64, 'drop': 0.1, 'lr': 0.002, 'wd': 0.0001}",False
+1D-CNN+기상,tuned,7.222246173371654,4.590913994416079,"{'hidden': 32, 'drop': 0.1, 'lr': 0.002, 'wd': 0.0001}",False
+LSTM+기상,default,7.180138467458079,4.562437967918748,"{'hidden': 64, 'drop': 0.1, 'lr': 0.002, 'wd': 0.0001}",False
+LSTM+기상,tuned,7.0617603300100455,4.497742099064401,"{'hidden': 32, 'drop': 0.1, 'lr': 0.002, 'wd': 0.0001}",False

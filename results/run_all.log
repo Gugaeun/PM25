@@ -1,0 +1,16 @@
+lstm_temp_humid_L48 {'val': np.float64(7.419), 'test': np.float64(4.86)} 108s
+lstm_ws_L48 {'val': np.float64(7.367), 'test': np.float64(4.871)} 110s
+lstm_wind_uv_L48 {'val': np.float64(7.376), 'test': np.float64(4.83)} 90s
+lstm_weather_L48 {'val': np.float64(7.251), 'test': np.float64(4.622)} 93s
+lstm_pollutants_L48 {'val': np.float64(7.44), 'test': np.float64(4.808)} 93s
+lstm_all_L48 {'val': np.float64(7.197), 'test': np.float64(4.592)} 92s
+lgbm_base_L48 {'val': np.float64(8.34), 'test': np.float64(5.129)} 9s
+lgbm_temp_humid_L48 {'val': np.float64(8.287), 'test': np.float64(5.12)} 7s
+lgbm_ws_L48 {'val': np.float64(8.187), 'test': np.float64(5.047)} 6s
+lgbm_wind_uv_L48 {'val': np.float64(8.129), 'test': np.float64(4.939)} 7s
+lgbm_weather_L48 {'val': np.float64(7.934), 'test': np.float64(4.904)} 8s
+lgbm_pollutants_L48 {'val': np.float64(8.096), 'test': np.float64(5.013)} 7s
+lgbm_all_L48 {'val': np.float64(7.894), 'test': np.float64(4.858)} 9s
+lstm_base_L24 {'val': np.float64(7.492), 'test': np.float64(4.941)} 60s
+lstm_base_L96 {'val': np.float64(7.496), 'test': np.float64(4.952)} 205s
+lstm_base_L168 {'val': np.float64(7.497), 'test': np.float64(4.957)} 377s

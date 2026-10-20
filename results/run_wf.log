@@ -1,0 +1,66 @@
+== 2025Q1: train=6984 val=1416 test=2136 (test 평균 PM2.5 26.5, 75초과 1224개)
+   lstm_base 73s
+   lstm_weather 61s
+   cnn_base 39s
+   cnn_weather 32s
+       model   MAE  RMSE
+       naive 12.95 18.25
+ persistence  9.04 14.19
+   lgbm_base 10.23 15.57
+lgbm_weather 10.08 15.62
+   lstm_base  8.75 13.35
+lstm_weather  8.39 12.79
+    cnn_base  8.81 13.37
+ cnn_weather  8.60 12.93
+== 2025Q2: train=9144 val=1416 test=2160 (test 평균 PM2.5 19.8, 75초과 72개)
+   lstm_base 106s
+   lstm_weather 94s
+   cnn_base 46s
+   cnn_weather 41s
+       model  MAE  RMSE
+       naive 9.28 12.34
+ persistence 6.91  9.94
+   lgbm_base 6.63  9.14
+lgbm_weather 6.53  9.01
+   lstm_base 6.23  8.74
+lstm_weather 6.17  8.70
+    cnn_base 6.26  8.80
+ cnn_weather 6.19  8.79
+== 2025Q3: train=11328 val=1416 test=2184 (test 평균 PM2.5 11.3, 75초과 0개)
+   lstm_base 197s
+   lstm_weather 105s
+   cnn_base 55s
+   cnn_weather 50s
+       model  MAE  RMSE
+       naive 5.62  7.60
+ persistence 4.11  5.94
+   lgbm_base 4.91  6.38
+lgbm_weather 4.35  5.80
+   lstm_base 3.95  5.48
+lstm_weather 3.81  5.32
+    cnn_base 4.07  5.61
+ cnn_weather 3.63  5.21
+== 2025Q4: train=13536 val=1416 test=2184 (test 평균 PM2.5 16.5, 75초과 504개)
+   lstm_base 214s
+   lstm_weather 145s
+   cnn_base 98s
+   cnn_weather 98s
+       model  MAE  RMSE
+       naive 9.18 14.14
+ persistence 6.54 11.39
+   lgbm_base 5.89  9.85
+lgbm_weather 5.50  9.43
+   lstm_base 5.82  9.71
+lstm_weather 5.33  9.08
+    cnn_base 5.92  9.91
+ cnn_weather 5.44  9.24
+              MAE_mean  MAE_std  red_mean  red_min  red_max
+model                                                      
+cnn_base          6.27     1.95      5.63     1.02     9.54
+cnn_weather       5.97     2.06     10.95     4.90    16.77
+lgbm_base         6.91     2.32     -4.59   -19.25    10.03
+lgbm_weather      6.62     2.48      1.05   -11.52    15.97
+lstm_base         6.19     1.97      7.02     3.27    11.00
+lstm_weather      5.92     1.91     10.98     7.24    18.58
+naive             9.26     3.00    -38.60   -43.27   -34.35
+persistence       6.65     2.02      0.00     0.00     0.00
