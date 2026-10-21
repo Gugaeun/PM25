@@ -94,7 +94,8 @@
 │   ├── 17_cpu_check.py        학습 곡선 일부를 CPU 시드 5개로 재확인
 │   ├── 18_load_test.py        API 반복·동시 요청 부하 테스트
 │   ├── 19_numpy_gru.py        NumPy GRU 직접 구현 + gradient check
-│   └── 20_serving_models_5y.py  서빙용 모델을 학습 5년으로 재학습·ONNX 변환
+│   ├── 20_serving_models_5y.py  서빙용 모델을 학습 5년으로 재학습·ONNX 변환
+│   └── 21_asos_check.py       기상청 ASOS 값을 실시간 모델 입력에 쓸 수 있는지 확인(적용하지 않음)
 ├── tests/                     누수 방지·수집 로직·API 자동 테스트
 ├── api/                       FastAPI 서빙 (ONNX Runtime), 예측 데모 화면
 ├── models/                    학습된 모델 + ONNX (서빙 기본은 *_y5 = 학습 5년)
@@ -127,6 +128,7 @@ py -3.11 -m venv .venv
 .venv\Scripts\python src\18_load_test.py       # API 부하 테스트 (약 20초)
 .venv\Scripts\python src\19_numpy_gru.py        # NumPy GRU gradient check + 짧은 학습 (약 15초)
 .venv\Scripts\python src\20_serving_models_5y.py  # 서빙 모델 5년 학습 재학습 (GPU, 약 5분)
+.venv\Scripts\python src\21_asos_check.py       # 기상청 ASOS 입력 확인 (인증키 필요, 약 1분)
 .venv\Scripts\python -m pytest tests -q           # 누수 방지·수집·API·장기 데이터 테스트
 ```
 
@@ -139,7 +141,8 @@ py -3.11 -m venv .venv
 ```
 
 - `http://127.0.0.1:8000` — 예측 데모. 시점을 고르면 그때까지 48시간 값으로 1~24시간 뒤를 예측하고 실제값과 겹쳐 보여줍니다. **실시간 예측이 아니라 지난 데이터(2025-07 이후)를 현재처럼 넣어 본 재현입니다.**
-- `http://127.0.0.1:8000/live` — 실시간 예측. 에어코리아(한국환경공단 OpenAPI)에서 서울 25개 구의 최근 48시간 PM2.5를 받아 앞으로 24시간을 예측합니다. 인증키는 환경변수 `AIRKOREA_KEY`로 설정합니다. 에어코리아에는 기상 변수가 없어 PM2.5만 쓰는 모델을 사용하며, 값은 확정 전 자료입니다. 예측은 `results/live_log.jsonl`에 기록되고 `src/09_live_check.py`로 나중에 실제값과 비교합니다.
+- **수집기와 호출 한도**: `src/10_live_collect.py`가 정해진 시각마다 같은 방법으로 예측을 받아 `results/live_log.jsonl`에 쌓습니다(`--every`로 간격, `--budget`으로 하루 호출 상한 지정). 에어코리아 개발 계정은 하루 500건 한도이고 한 번 수집에 측정소 25곳을 부르므로, 호출 횟수를 `results/airkorea_calls.json`에 세어 상한(기본 360건)을 넘으면 그날은 건너뜁니다. 서비스는 "한국환경공단_에어코리아_대기오염정보"(한국어판)로 활용 신청해야 키가 통합니다(영문 조회 서비스로 신청하면 `SERVICE_KEY_IS_NOT_REGISTERED_ERROR`).
+- `http://127.0.0.1:8000/live` — 실시간 예측. 에어코리아(한국환경공단 OpenAPI)에서 서울 25개 구의 최근 48시간 PM2.5를 받아 앞으로 24시간을 예측합니다. 인증키는 환경변수 `AIRKOREA_KEY`로 설정합니다. 에어코리아에는 기상 변수가 없어 PM2.5만 쓰는 모델을 사용하며, 값은 확정 전 자료입니다. 기상청 ASOS(서울 관측소) 시간 자료로 기상 변수를 채워 기상 변수 모델을 쓰는 방법도 확인했지만 적용하지 않았습니다. 관측소 한 곳의 값이 학습 데이터(25개 구 평균)와 정의가 달라(풍속 평균 약 0.8m/s 차이, 풍향 성분은 거의 불일치) 2026년 테스트에서 MAE가 7.40(풍속 보정 시 6.30)으로 PM2.5 전용 모델(5.98)보다 나빠졌고, 학습에 쓴 기상 값을 넣어도 개선은 약 2.5%(5.83)에 그쳤기 때문입니다(`src/21_asos_check.py`, `results/asos_check.md`). 예측은 `results/live_log.jsonl`에 기록되고 `src/09_live_check.py`로 나중에 실제값과 비교합니다.
 
 | 지난 데이터 재현 데모 | 실시간 예측 |
 |---|---|
