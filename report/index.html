@@ -3,27 +3,29 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* layout: 좁은 단일 컬럼 리포트. 섹션마다 제목 → 한 줄 결론 → 차트/표 → 읽는 법 */
+/* layout: 어두운 상단 띠(제목·요약) + 고정 탭 5개(요약·결과·시행착오·검증·서비스와 한계). 탭마다 제목 → 한 줄 결론 → 차트/표 → 읽는 법 */
 :root{
   --bg:#f6f8fa; --surface:#ffffff; --ink:#14212e; --muted:#5a6b7b; --line:#dbe2e9; --grid:#e8edf2;
   --accent:#1d5fd0; --accent-soft:#e3edfc; --base:#8b99a8; --base2:#b4bfcb;
   --good:#2f7de1; --normal:#2e9d62; --bad:#e08a1e; --vbad:#d1383d;
   --pos:#1f8f55; --neg:#c93a3f;
+  --hero:#14212e; --hero-fg:#ffffff; --hero-mute:#aebccb;
   --sans:'IBM Plex Sans KR',system-ui,-apple-system,'Segoe UI','Malgun Gothic',sans-serif;
   --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0f1720; --surface:#17212c; --ink:#e6edf4; --muted:#93a4b5; --line:#2a3846; --grid:#223040;
   --accent:#6ea2f5; --accent-soft:#1c2c47; --base:#7d8c9c; --base2:#566575;
-  --good:#5b9cf0; --normal:#4cbb85; --bad:#eba24a; --vbad:#ee6b70; --pos:#4cbb85; --neg:#ee6b70; color-scheme:dark}}
+  --good:#5b9cf0; --normal:#4cbb85; --bad:#eba24a; --vbad:#ee6b70; --pos:#4cbb85; --neg:#ee6b70; --hero:#0a1118; --hero-fg:#e6edf4; --hero-mute:#8fa1b3; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0f1720; --surface:#17212c; --ink:#e6edf4; --muted:#93a4b5; --line:#2a3846; --grid:#223040;
   --accent:#6ea2f5; --accent-soft:#1c2c47; --base:#7d8c9c; --base2:#566575;
-  --good:#5b9cf0; --normal:#4cbb85; --bad:#eba24a; --vbad:#ee6b70; --pos:#4cbb85; --neg:#ee6b70; color-scheme:dark}
+  --good:#5b9cf0; --normal:#4cbb85; --bad:#eba24a; --vbad:#ee6b70; --pos:#4cbb85; --neg:#ee6b70; --hero:#0a1118; --hero-fg:#e6edf4; --hero-mute:#8fa1b3; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;
-  padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-main{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{padding-block:36px 72px}
+.panel{display:flex;flex-direction:column;gap:44px}
 h1{font-size:clamp(26px,5vw,36px);line-height:1.2;margin:0 0 10px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
 h2{font-size:20px;margin:0 0 6px;font-weight:600;text-wrap:balance}
 p{margin:0}
@@ -62,19 +64,76 @@ tr.hl td{background:var(--accent-soft)}
 code,pre{font-family:var(--mono);font-size:12.5px}
 pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto;margin:10px 0 0}
 footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:16px}
+
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--hero)}
+.hero{background:var(--hero);color:var(--hero-fg)}
+.hero .wrap{padding-block:40px 32px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--hero-mute);margin-bottom:12px}
+.hero h1,.hero .lead,.finding,.note,.flow span,h2{word-break:keep-all}
+.hero h1{color:var(--hero-fg);font-size:clamp(28px,5vw,42px)}
+.hero .lead{color:var(--hero-mute);font-size:16px}
+.hero .meta{color:var(--hero-mute)}
+.tabbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:2px;overflow-x:auto;max-width:1040px;margin:0 auto;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+.tabs button{font:inherit;font-size:15px;font-weight:500;background:none;border:0;border-bottom:3px solid transparent;padding:14px 16px 11px;cursor:pointer;color:var(--muted);white-space:nowrap}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:6px}
+.summary .card b{font-size:36px}
+.summary .card span{font-size:14px}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
+.flow>div{border-top:3px solid var(--ink);padding-top:10px;min-width:0}
+.flow .lim{border-top-color:var(--bad)}.flow .ap{border-top-color:var(--accent)}
+.flow b{display:block;font-size:15px;margin-bottom:2px}
+.flow span{font-size:14px;color:var(--muted)}
+.flow .lim b{color:var(--bad)}.flow .ap b{color:var(--accent)}
+.guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px 18px;font-size:14px;color:var(--muted)}
+.guide b{color:var(--ink);font-weight:600}
+.panel>section>h2{font-size:22px}
+.panel[hidden]{display:none}
 </style>
 
-<main>
-<header>
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Portfolio project 1</div>
   <h1>서울 PM2.5 시계열 예측 결과</h1>
   <p class="lead">서울 25개 자치구 측정소 평균 PM2.5를 1~24시간 뒤까지 예측합니다. naive·persistence·ARIMA·LightGBM을 기준으로 두고 PyTorch LSTM·1D-CNN을 같은 조건에서 비교했습니다.</p>
   <div class="meta"><span>데이터 2024-01 ~ 2025-12 (17,544시간)</span><span>학습 2024 / 검증 2025-01~06 / 테스트 2025-07~12</span><span>출처 서울 열린데이터광장 OA-23044 (확정 전 자료)</span></div>
-</header>
+</div></header>
+<div class="tabbar"><div class="tabs" role="tablist" aria-label="결과 구분">
+  <button role="tab" id="t-overview" aria-controls="p-overview" data-tab="overview">요약</button>
+  <button role="tab" id="t-results" aria-controls="p-results" data-tab="results">결과</button>
+  <button role="tab" id="t-trials" aria-controls="p-trials" data-tab="trials">시행착오</button>
+  <button role="tab" id="t-checks" aria-controls="p-checks" data-tab="checks">검증</button>
+  <button role="tab" id="t-service" aria-controls="p-service" data-tab="service">서비스·한계</button>
+</div></div>
+<main class="wrap">
 
-<section id="summary">
+<div class="panel" id="p-overview" role="tabpanel" aria-labelledby="t-overview">
+<section id="sum">
   <div class="summary" id="sumcards"></div>
 </section>
+<section id="flow">
+  <h2>문제에서 접근까지</h2>
+  <p class="finding">기존 서비스는 등급(좋음·보통 등)을 알려 주고, 이 프로젝트는 시간별 농도 수치를 예측합니다.</p>
+  <div class="flow">
+    <div><b>문제</b><span>초미세먼지는 시간대별 변동이 커 사전 대응이 어렵습니다.</span></div>
+    <div><b>기존 방법</b><span>현재 농도 확인(에어코리아·날씨 앱), 시간·일별 등급 예보</span></div>
+    <div class="lim"><b>한계</b><span>등급 단위라 구체적인 농도 수치와 변화 폭을 알기 어렵습니다.</span></div>
+    <div class="ap"><b>이 프로젝트의 접근</b><span>1~24시간 뒤 농도를 수치로 예측하고, 날씨 정보를 추가해 기준 방법과 비교합니다.</span></div>
+  </div>
+</section>
+<section id="guide">
+  <h2>이 페이지의 구성</h2>
+  <div class="guide">
+    <div><b>결과</b><br>방법별 오차, 날씨 정보의 효과, 실제값과 예측값</div>
+    <div><b>시행착오</b><br>고농도 실패, 개선 시도, 기상청 연동 검증</div>
+    <div><b>검증</b><br>새 기간과 긴 학습, 분기별 재확인</div>
+    <div><b>서비스와 한계</b><br>ONNX·API 서빙, 한계</div>
+  </div>
+</section>
 
+</div>
+<div class="panel" id="p-results" role="tabpanel" aria-labelledby="t-results" hidden>
 <section id="models">
   <h2>모델 비교</h2>
   <p class="finding" id="models-find"></p>
@@ -109,6 +168,8 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
   <p class="note" id="series-note"></p>
 </section>
 
+</div>
+<div class="panel" id="p-trials" role="tabpanel" aria-labelledby="t-trials" hidden>
 <section id="failure">
   <h2>고농도에서 실패하는 방식</h2>
   <p class="finding" id="fail-find"></p>
@@ -128,6 +189,22 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
   <p class="note">고농도 가중은 정답이 35를 넘는 샘플의 손실을 3배로, 분위수 0.7은 낮게 예측하는 것을 더 크게 벌점합니다. 시드 3개 앙상블, 테스트 2025-07~12. 가중치 3은 하나만 시도했고 튜닝하지 않았습니다. 서빙 모델에는 적용하지 않았습니다.</p>
 </section>
 
+<section id="asos">
+  <h2>기상청 ASOS 연동: 검증 후 적용하지 않음</h2>
+  <p class="finding">실시간 화면은 에어코리아에 기상 값이 없어 PM2.5 전용 모델을 씁니다. 기상청 ASOS 서울 관측소 값으로 기상 변수를 채워 보았지만 오차가 더 커졌습니다.</p>
+  <div class="tablewrap"><table style="min-width:0">
+    <tr><th>입력 (테스트 2026-01~09, 24시간 평균 MAE)</th><th>MAE</th></tr>
+    <tr><td>학습에 쓴 기상 값 (25개 구 평균, 이상적인 경우)</td><td class="num">5.83</td></tr>
+    <tr><td>ASOS 값 그대로</td><td class="num">7.40</td></tr>
+    <tr><td>ASOS, 바람은 평균비(0.64)로 보정</td><td class="num">6.30</td></tr>
+    <tr><td>ASOS 기온·습도, 바람은 평균 상수</td><td class="num">6.19</td></tr>
+    <tr class="hl"><td>PM2.5 전용 모델 (현재 실시간 모델)</td><td class="num">5.98</td></tr>
+    <tr><td style="color:var(--muted)">persistence</td><td class="num" style="color:var(--muted)">6.65</td></tr>
+  </table></div>
+  <p class="note">ASOS는 관측소 한 곳이고 학습 데이터는 25개 구 평균이라 정의가 다릅니다. 풍속은 평균 약 0.8m/s 차이가 나고, 풍향 성분(wind_v)은 상관이 0.14~0.33으로 거의 맞지 않았습니다. 기온·습도는 상관 0.97 이상으로 잘 맞았습니다. 학습에 쓴 기상 값을 넣어도 PM2.5 전용 모델 대비 개선은 약 2.5%여서, 실시간 화면은 PM2.5 전용 모델을 유지합니다(src/21_asos_check.py).</p>
+</section>
+</div>
+<div class="panel" id="p-checks" role="tabpanel" aria-labelledby="t-checks" hidden>
 <section id="long">
   <h2>새 기간과 더 긴 학습으로 확인</h2>
   <p class="finding">결론은 학습 때 쓰지 않은 2026년 1~9월에서도 유지됩니다. 학습 기간은 5년까지 늘리면 좋아지다 멈추고, 고농도 놓침은 데이터를 늘려도 그대로입니다.</p>
@@ -149,11 +226,13 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
   <p class="note">2025년 각 분기를 테스트로 두고 그 이전 전체로 학습했습니다(첫 분기는 학습 데이터가 2024년 1년뿐). 하이퍼파라미터는 분기마다 다시 맞추지 않았습니다. fold가 4개이고 분기 안의 사건 몇 개가 평균을 좌우하므로 개선율은 대략적인 범위로 읽어야 합니다.</p>
 </section>
 
+</div>
+<div class="panel" id="p-service" role="tabpanel" aria-labelledby="t-service" hidden>
 <section id="deploy">
   <h2>ONNX 변환과 API 서빙</h2>
   <p class="finding" id="onnx-find"></p>
   <div class="tablewrap" style="margin-top:0"><table id="tbl-onnx"></table></div>
-  <p class="note">추론 시간은 CPU 1스레드, 요청 1건(배치 1) 기준 p50입니다. 모델은 시드 0 하나이고 모델 비교표의 수치와 다릅니다. 반복·동시 요청 부하 테스트는 아직 하지 않았습니다.</p>
+  <p class="note">추론 시간은 CPU 1스레드, 요청 1건(배치 1) 기준 p50입니다. 모델은 시드 0 하나이고 모델 비교표의 수치와 다릅니다. 부하 테스트는 같은 컴퓨터에서 동시 1~32명으로 했고(results/load_test.md), 다중 worker에서 드물게 요청이 오래 응답하지 않은 경우가 있었습니다(원인 미확인). 별도 서버·실제 네트워크 성능은 아닙니다.</p>
   <div class="card" style="margin-top:14px">
     <p style="font-size:14px;font-weight:600">FastAPI <code>POST /predict</code></p>
     <pre>{ "end_time": "2025-12-31T23:00:00",
@@ -165,7 +244,7 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
 </section>
 
 <section id="limits">
-  <h2>한계와 아직 하지 않은 것</h2>
+  <h2>한계</h2>
   <div class="limits">
     <div class="card"><b>데이터</b><ul>
       <li>서울시 안내에 따른 확정 전 자료입니다. 최종 확정 자료는 에어코리아에 있습니다.</li>
@@ -175,13 +254,10 @@ footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padd
       <li>단일 분할 테스트는 여름·가을 위주라 고농도 표본이 적습니다.</li>
       <li>walk-forward는 fold 4개이고 분기별 재튜닝은 하지 않았습니다.</li>
       <li>개별 기상 변수의 ablation은 walk-forward에서 다시 하지 않았습니다.</li></ul></div>
-    <div class="card"><b>미완료</b><ul>
-      <li>API 반복·동시 요청 부하 테스트</li>
-      <li>NumPy RNN/GRU 직접 구현과 gradient check</li>
-      <li>에어코리아 실시간 데이터 데모</li></ul></div>
   </div>
 </section>
 
+</div>
 <footer>데이터: 서울 열린데이터광장 "서울시 대기오염물질 측정정보"(공공누리 1유형). 코드와 결과는 프로젝트 폴더의 <code>src/</code>, <code>results/</code>, <code>api/</code>에 있습니다.</footer>
 </main>
 
@@ -195,7 +271,7 @@ const NAME = {naive:'naive (어제 같은 시각)',persistence:'persistence (직
 const COL = {naive:'--base2',persistence:'--base',lgbm:'#c58a2b',lstm:'#2a8f8f',cnn:'#8d5fc9',lgbm_w:'#c58a2b',lstm_w:'--accent',cnn_w:'#d0527a'};
 const colr = k => COL[k].startsWith('--') ? css(COL[k]) : COL[k];
 const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; parent && parent.appendChild(e); return e; };
-const cw = id => Math.max(320, Math.min(760, $(id).clientWidth || 760));
+const cw = id => Math.max(320, Math.min(920, $(id).clientWidth || 920));
 function svgRoot(host, w, h) { host.innerHTML = ''; return el('svg', {viewBox:`0 0 ${w} ${h}`, role:'img'}, host); }
 function nice(max) { const p = Math.pow(10, Math.floor(Math.log10(max))); const m = max / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
 function seg(host, items, cur, on) {
@@ -344,5 +420,20 @@ let abModel = 'lstm';
 seg($('ab-model'), [['lstm','LSTM'],['lgbm','LightGBM']], 'lstm', v => { abModel = v; drawAblation(v); });
 const drawAll = () => { drawHorizon(); drawAblation(abModel); drawSeries(); drawWf(); };
 drawAll(); drawFail(6);
+/* ---------- 탭 ---------- */
+const TABS = ['overview','results','trials','checks','service'];
+function showTab(id, focus) {
+  if (!TABS.includes(id)) id = 'overview';
+  TABS.forEach(k => { const on = k === id; $('p-' + k).hidden = !on; const b = $('t-' + k); b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
+  try { history.replaceState(null, '', '#' + id); } catch (e) {}
+  scrollTo(0, 0);
+  drawAll(); drawFail(Number(document.querySelector('#f-h [aria-pressed="true"]')?.textContent.split('시간')[0]) || 6);
+}
+document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab); });
+document.querySelector('.tabs').addEventListener('keydown', e => {
+  const i = TABS.findIndex(k => !$('p-' + k).hidden), d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+  if (d) { e.preventDefault(); showTab(TABS[(i + d + TABS.length) % TABS.length], true); }
+});
+showTab(location.hash.slice(1));
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawAll, 120); });
 </script>
