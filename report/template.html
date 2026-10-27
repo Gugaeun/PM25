@@ -145,7 +145,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     <div id="chart-horizon"></div>
   </div>
   <div class="tablewrap"><table id="tbl-models"></table></div>
-  <p class="note">설정을 검증 구간에서 고르는 튜닝을 해도(LightGBM·LSTM·1D-CNN) 테스트 MAE는 −1.4%~+0.9% 변하는 데 그쳐 순위가 같았습니다. naive(어제 같은 시각)는 예측 시점과 상관없이 24시간 전 값을 쓰기 때문에 모든 horizon에서 오차가 같습니다. 그래서 짧은 horizon에서는 persistence(직전 값)가 훨씬 강한 기준입니다. LSTM·CNN·LightGBM+기상 값은 시드 3개를 평균낸 앙상블 예측입니다.</p>
+  <p class="note">설정을 검증 구간에서 고르는 튜닝을 해도(LightGBM·LSTM·1D-CNN) 테스트 MAE는 −1.4%~+0.9% 변하는 데 그쳤지만 1D-CNN과 LSTM의 순위는 서로 바뀌었습니다(튜닝 전 1D-CNN 4.55 < LSTM 4.56, 튜닝 후 LSTM 4.50 < 1D-CNN 4.59). naive(어제 같은 시각)는 예측 시점과 상관없이 24시간 전 값을 쓰기 때문에 모든 horizon에서 오차가 같습니다. 그래서 짧은 horizon에서는 persistence(직전 값)가 훨씬 강한 기준입니다. LSTM·CNN·LightGBM+기상 값은 시드 3개를 평균낸 앙상블 예측입니다.</p>
 </section>
 
 <section id="ablation">
